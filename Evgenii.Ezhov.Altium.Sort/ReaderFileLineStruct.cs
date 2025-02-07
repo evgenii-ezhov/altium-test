@@ -2,30 +2,26 @@
 
 namespace Evgenii.Ezhov.Altium.Sort;
 
+/// <summary>
+/// Decorator for FileLineStruct, contains Reader number for ambiguous resolving on SortedDictionary
+/// </summary>
 internal struct ReaderFileLineStruct
 {
 	public FileLineStruct Line;
 	public int Reader;
-	public string Text;
 	public static ReaderFileLineStruct Get(string line, int reader)
 	{
 		return new ReaderFileLineStruct 
 		{
 			Line = FileLineStruct.Get(line),
 			Reader = reader,
-			Text = line
 		};
 	}
 
 	public static int Compare(ReaderFileLineStruct a, ReaderFileLineStruct b)
 	{
-		int cmp = a.Line.Hash.CompareTo(b.Line.Hash);
-		if (cmp == 0 && a.Line.Text != null && b.Line.Text != null) cmp = a.Line.Text.CompareTo(b.Line.Text);
+		int cmp = FileLineStruct.Compare(a.Line, b.Line);
 		if (cmp != 0) return cmp;
-
-		if (a.Line.Number < b.Line.Number) return -1;
-		if (a.Line.Number > b.Line.Number) return 1;
-
 		return a.Reader.CompareTo(b.Reader);
 	}
 

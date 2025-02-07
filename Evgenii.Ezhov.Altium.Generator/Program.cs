@@ -9,7 +9,13 @@ namespace Evgenii.Ezhov.Altium.Generator
 	{
 		private static CancellationTokenSource? tokenSource;
 
-		// Use launchSettings.json for provide arguments or provide it from command line
+		/*
+		  Use launchSettings.json for provide arguments or provide it from command line
+
+	      Arguments: 
+			  -o <o>          Output file (required)
+			  -s <s>          Size in bytes (required)
+		 * */
 		static void Main(string[] args)
 		{
 			tokenSource = new CancellationTokenSource();

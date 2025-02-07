@@ -2,23 +2,39 @@
 
 namespace Evgenii.Ezhov.Altium.Sort;
 
-
-
 internal struct FileLineStruct 
 {
+	/// <summary>
+	/// Amount of string bytes for Hash
+	/// </summary>
 	private const int HashSize = 8;
 
+	/// <summary>
+	/// Hash for first comparison
+	/// </summary>
 	public ulong Hash;
-	public long Number;
-	//public string Text;
 
+	/// <summary>
+	/// Numeric part of string
+	/// </summary>
+	public long Number;
+	
+	/// <summary>
+	/// Source line
+	/// </summary>
+	public string Text;
+
+	/// <summary>
+	/// First text byte - used in comparator
+	/// </summary>
+	public int Offset;
+	
 	public static FileLineStruct Get(string line)
 	{
 		long number = 0;
 		ulong hash = 0;
 		int hashPos = 0;
-		string text = "";
-		
+		int offset = 0;
 		int i;
 		for (i = 0; i < line.Length; i++)
 		{
@@ -27,7 +43,7 @@ internal struct FileLineStruct
 			if (c == '.')
 			{
 				i++;
-				text = line.Substring(i + 1);
+				offset = i;
 				break;
 			}			
 			number = number * 10 + (c - '0');
@@ -48,13 +64,15 @@ internal struct FileLineStruct
 				hash = hash * 0xFF;
 			}
 		}
-		return new FileLineStruct { Hash = hash, Number = number, Text = text };
+		return new FileLineStruct { Hash = hash, Number = number, Text = line, Offset = offset };
 	}
 	
 	public static int Compare(FileLineStruct a, FileLineStruct b)
 	{
 		int cmp = a.Hash.CompareTo(b.Hash);
-		if (cmp == 0) cmp = a.Text.CompareTo(b.Text);
+		if (cmp != 0) return cmp;
+
+		cmp = string.Compare(a.Text, a.Offset, b.Text, b.Offset, a.Text.Length);
 		if (cmp != 0) return cmp;
 
 		if (a.Number < b.Number) return -1;

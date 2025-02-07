@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 
 namespace Evgenii.Ezhov.Altium.Sort;
-
 
 internal class ChunkReader: IDisposable
 {
@@ -21,7 +18,6 @@ internal class ChunkReader: IDisposable
 	private int _bufferCurrentSize;
 
 	private bool _noMoreLines = false;
-
 
 	private int _readerNumber;
 
@@ -97,4 +93,3 @@ internal class ChunkReader: IDisposable
 		catch { }
 	}
 }
-

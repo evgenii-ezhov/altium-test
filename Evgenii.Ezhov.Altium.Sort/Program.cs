@@ -9,7 +9,14 @@ namespace Evgenii.Ezhov.Altium.Sort
 	{
 		private static CancellationTokenSource? tokenSource;
 
-		// Use launchSettings.json for provide arguments or provide it from command line
+		/*
+		  Use launchSettings.json for provide arguments or provide it from command line
+
+	      Arguments: 
+			  -o Output file (required)
+			  -i Input file (by default [output].sort)
+		 * */
+
 		static void Main(string[] args)
 		{
 			tokenSource = new CancellationTokenSource();

@@ -9,18 +9,25 @@ namespace Evgenii.Ezhov.Altium.Sort;
 
 public class Sorter
 {
+	// *****
+	// This values were obtained experimentally 
 	private const int ChunkSize = 2_000_000;
+	private const int MaxTaskAmount = 4;
+	// *****
 
-	private long _lineCount;
+	/// <summary>
+	/// Temporary files for sorted chunks
+	/// </summary>
 	private List<string> _chunkFiles;
+	private int chunkCounter = 0;
+	private bool _noMoreLines = false; 
+	private long _lineCount;
 
 	private string _inputFileName;
 	private string _outputFileName;
 	private string _tempFolderPath;
 
 	private SemaphoreSlim readSemaphore = new(1);
-	private int chunkCounter = 0;
-	private bool _noMoreLines = false;
 
 	private CancellationToken _cancellationToken;
 
@@ -49,13 +56,17 @@ public class Sorter
 			Directory.CreateDirectory(_tempFolderPath);
 		}
 
+		Console.WriteLine($"Press ctrl+c to stop");
+
+		Console.WriteLine($"Chunks step start: ");
+
 		CreateChunks();
 
-		Console.WriteLine($"Chunks part duration {(DateTime.Now - startTime).TotalSeconds} seconds");
-
+		Console.WriteLine($"Chunks step duration {(DateTime.Now - startTime).TotalSeconds} seconds");
+		Console.WriteLine($"Write process start: ");
 		MergeChunks();
 
-		if (false && !Directory.Exists(_tempFolderPath))
+		if (!Directory.Exists(_tempFolderPath))
 		{
 			Directory.CreateDirectory(_tempFolderPath);
 		}
@@ -72,10 +83,10 @@ public class Sorter
 		}
 	}
 
+	#region Chunk steps
 	private int ReadChunk(StreamReader reader, FileLineStruct[] buffer)
 	{
 		string? line;
-		var t = DateTime.Now;
 		for (int i = 0; i < ChunkSize; i++)
 		{
 			if (_cancellationToken.IsCancellationRequested) return 0;
@@ -83,14 +94,11 @@ public class Sorter
 			if (line == null) return i;
 			buffer[i] = FileLineStruct.Get(line);
 		}
-		Console.WriteLine($"Read duration: {(DateTime.Now - t).TotalSeconds}");
 		return ChunkSize;
 	}
 
 	private void SortChunk(FileLineStruct[] buffer, int? size = null)
 	{
-		var t = DateTime.Now;
-
 		if (size.HasValue)
 		{
 			Array.Sort(buffer, 0, size.Value, new FileLineStruct.Comparer());
@@ -99,13 +107,10 @@ public class Sorter
 		{
 			Array.Sort(buffer, FileLineStruct.Compare);
 		}
-
-		Console.WriteLine($"Sort duration: {(DateTime.Now - t).TotalSeconds}");
 	}
 
 	private void WriteChunk(FileLineStruct[] lines, int chunkIndex, int size)
 	{
-		var t = DateTime.Now;
 		string chunkFile = Path.Combine(_tempFolderPath, $"chunk_{chunkIndex}.txt");
 
 		using (StreamWriter writer = new StreamWriter(chunkFile))
@@ -113,19 +118,12 @@ public class Sorter
 			for (int i = 0; i < size; i++)
 			{
 				if (_cancellationToken.IsCancellationRequested) return;
-				writer.WriteLine(lines[i].Number
-					+ ". "
-					+ lines[i].Text);
+				writer.WriteLine(lines[i].Text);
 			}
 		}
 
 		_chunkFiles.Add(chunkFile);
-
-		Console.WriteLine($"Write duration: {(DateTime.Now - t).TotalSeconds}");
 	}
-
-
-
 
 	private async Task<(int, FileLineStruct[])> ExecuteChunk(StreamReader reader, FileLineStruct[] buffer, int? size = null)
 	{
@@ -159,21 +157,20 @@ public class Sorter
 
 	private void CreateChunks()
 	{
-		const int MaxAmount = 4;
-
 		_chunkFiles = new List<string>();
 
 		List<FileLineStruct[]> buffers = new();
 		Queue<Task<(int, FileLineStruct[])>> tasks = new();
 
-		for (int i = 0; i < MaxAmount; i++)
+		for (int i = 0; i < MaxTaskAmount; i++)
 		{
 			buffers.Add(new FileLineStruct[ChunkSize]);
 		}
+		Console.Write($"\rProcessed lines: 0             ");
 
 		using (StreamReader reader = new StreamReader(_inputFileName))
 		{
-			for (int i = 0; i < MaxAmount; i++)
+			for (int i = 0; i < MaxTaskAmount; i++)
 			{
 				var index = i;
 				var task = Task.Run(() => ExecuteChunk(reader, buffers[index]));
@@ -186,13 +183,15 @@ public class Sorter
 			{
 				currentTask.Wait();
 
+				Console.Write($"\rProcessed lines: {_lineCount}            ");
+
 				if (_cancellationToken.IsCancellationRequested) return;
 				var (linesCount, buffer) = currentTask.Result;
 
 				if (linesCount > 0)
 				{
 					_lineCount += linesCount;
-					
+
 					if (!_noMoreLines)
 					{
 						var newTask = Task.Run(() => ExecuteChunk(reader, buffer));
@@ -208,11 +207,12 @@ public class Sorter
 				{ 
 					currentTask = null; 
 				}
-				
 			}
-		}		
-	}
 
+			Console.WriteLine();
+		}
+	}
+	#endregion
 
 	private void MergeChunks()
 	{
@@ -234,6 +234,7 @@ public class Sorter
 				{
 					var chunkReader = new ChunkReader(_chunkFiles[i], i, readerCount);
 					sortedReaders.Add(chunkReader.Current, chunkReader);
+					readers.Add(chunkReader);
 				}
 
 				long currentLineCount = 0;
@@ -243,14 +244,10 @@ public class Sorter
 					if (_cancellationToken.IsCancellationRequested) return;
 					minLineReader = sortedReaders.First().Value;
 					sortedReaders.Remove(minLineReader.Current);
-
-					writer.WriteLine(minLineReader.Current.Line.Number
-						+ ". " 
-						+ minLineReader.Current.Line.Text);
+					writer.WriteLine(minLineReader.Current.Line.Text); 
 
 					if (!minLineReader.Next())
 					{
-						readers.Remove(minLineReader);
 						readerCount--;
 					}
 					else
@@ -260,10 +257,11 @@ public class Sorter
 
 					if (++currentLineCount % logPeriod == 0)
 					{
-						Console.WriteLine($"Writing progress: { Math.Round( 100 * ((float)currentLineCount / _lineCount), 4) } %" +
-							$" {currentLineCount} out of {_lineCount}");
+						Console.Write($"\rWriting progress: { Math.Round( 100 * ((float)currentLineCount / _lineCount), 4) } %" +
+							$" {currentLineCount} out of {_lineCount}                           ");
 					}
 				}
+				Console.WriteLine();
 			}
 			finally
 			{
@@ -272,5 +270,4 @@ public class Sorter
 			}
 		}
 	}
-
 }

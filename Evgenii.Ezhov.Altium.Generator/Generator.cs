@@ -16,8 +16,6 @@ namespace Evgenii.Ezhov.Altium.Generator
 
 		private readonly Random _random;
 		private readonly string[] _words;
-		
-		
 
 		public Generator()
 		{
