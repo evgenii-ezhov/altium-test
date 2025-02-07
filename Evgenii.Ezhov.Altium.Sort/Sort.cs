@@ -113,7 +113,9 @@ public class Sorter
 			for (int i = 0; i < size; i++)
 			{
 				if (_cancellationToken.IsCancellationRequested) return;
-				writer.WriteLine(lines[i].Text);
+				writer.WriteLine(lines[i].Number
+					+ ". "
+					+ lines[i].Text);
 			}
 		}
 
@@ -242,7 +244,9 @@ public class Sorter
 					minLineReader = sortedReaders.First().Value;
 					sortedReaders.Remove(minLineReader.Current);
 
-					writer.WriteLine(minLineReader.Current.Text);
+					writer.WriteLine(minLineReader.Current.Line.Number
+						+ ". " 
+						+ minLineReader.Current.Line.Text);
 
 					if (!minLineReader.Next())
 					{

@@ -16,10 +16,9 @@ internal class ChunkReader: IDisposable
 
 	private StreamReader _streamReader;
 
-	//private Queue<ReaderFileLineStruct> _buffer;
-
 	private ReaderFileLineStruct[] _buffer;
 	private int _bufferPosition;
+	private int _bufferCurrentSize;
 
 	private bool _noMoreLines = false;
 
@@ -30,10 +29,10 @@ internal class ChunkReader: IDisposable
 	{
 		_bufferSize = MaxTotalBufferSize / chunkAmount;
 		_streamReader = new StreamReader(fileName);
-		//_buffer = new Queue<ReaderFileLineStruct>(_bufferSize);
 
 		_buffer = new ReaderFileLineStruct[_bufferSize];
-		_bufferPosition = -1;
+		_bufferPosition = 1;
+		_bufferCurrentSize = 0;
 
 		_noMoreLines = false;
 		_readerNumber = number;
@@ -42,21 +41,25 @@ internal class ChunkReader: IDisposable
 	
 	private void ReadBuffer()
 	{
-		if (_noMoreLines) return;
-
-		_bufferPosition = _bufferSize - 1;
+		_bufferPosition = 0;
+		if (_noMoreLines)
+		{
+			_bufferCurrentSize = 0;
+			return;
+		}
+		
+		_bufferCurrentSize = _bufferSize - 1;
 		for (int i = 0; i < _bufferSize; i++)
 		{
 			string? line = _streamReader.ReadLine();
 
 			if (!string.IsNullOrEmpty(line))
 			{
-				//_buffer.Enqueue(ReaderFileLineStruct.Get(line, _readerNumber));
 				_buffer[i] = ReaderFileLineStruct.Get(line, _readerNumber);
 			}
 			else
 			{
-				_bufferPosition = i - 1;
+				_bufferCurrentSize = i - 1;
 				_noMoreLines = true;
 				return;
 			}
@@ -65,31 +68,18 @@ internal class ChunkReader: IDisposable
 
 	public bool Next()
 	{
-		if (_bufferPosition < 0)
+		if (_bufferPosition > _bufferCurrentSize)
 		{
 			ReadBuffer();
 
-			if (_bufferPosition < 0)
+			if (_bufferCurrentSize < 1)
 			{
 				Current = default;
 				return false;
 			}
 		}
-		Current = _buffer[_bufferPosition--];
+		Current = _buffer[_bufferPosition++];
 		return true;
-		/*if (_buffer.Count == 0)
-		{
-			ReadBuffer();
-
-			if (_buffer.Count == 0)
-			{
-				IsEmpty = true;
-				Current = default;
-				return false;
-			}
-		}
-		Current = _buffer.Dequeue();
-		return true;*/
 	}
 
 	public void Dispose()
