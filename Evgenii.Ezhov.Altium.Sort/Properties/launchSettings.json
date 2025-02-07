@@ -1,0 +1,24 @@
+{
+    "profiles": {
+        "default": {
+            "commandName": "Project",
+            "commandLineArgs": "-i output.txt -o output.sort.txt"
+        },
+        "100M": {
+            "commandName": "Project",
+            "commandLineArgs": "-i D:\\TestJob\\Evgenii.Ezhov.Altium\\100m.txt -o D:\\TestJob\\Evgenii.Ezhov.Altium\\100m.sort.txt"
+        },
+        "1GB": {
+            "commandName": "Project",
+            "commandLineArgs": "-i D:\\TestJob\\Evgenii.Ezhov.Altium\\1gb.txt -o D:\\TestJob\\Evgenii.Ezhov.Altium\\1gb.sort.txt"
+        },
+        "10GB": {
+            "commandName": "Project",
+            "commandLineArgs": "-i D:\\TestJob\\Evgenii.Ezhov.Altium\\10gb.txt -o D:\\TestJob\\Evgenii.Ezhov.Altium\\10gb.sort.txt"
+        },
+        "100GB": {
+            "commandName": "Project",
+            "commandLineArgs": "-i D:\\TestJob\\Evgenii.Ezhov.Altium\\100gb.txt -o D:\\TestJob\\Evgenii.Ezhov.Altium\\100bg.sort.txt"
+        }
+    }
+}

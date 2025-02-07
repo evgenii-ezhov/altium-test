@@ -1,0 +1,24 @@
+{
+    "profiles": {
+        "default": {
+            "commandName": "Project",
+            "commandLineArgs": "-o output.txt -s 1000"
+        },
+        "100M": {
+            "commandName": "Project",
+            "commandLineArgs": "-o D:\\TestJob\\Evgenii.Ezhov.Altium\\100m.txt -s 104857600"
+        },
+        "1GB": {
+            "commandName": "Project",
+            "commandLineArgs": "-o D:\\TestJob\\Evgenii.Ezhov.Altium\\1gb.txt -s 1073741824"
+        },
+        "10GB": {
+            "commandName": "Project",
+            "commandLineArgs": "-o D:\\TestJob\\Evgenii.Ezhov.Altium\\10gb.txt -s 10737418240"
+        },
+        "100GB": {
+            "commandName": "Project",
+            "commandLineArgs": "-o D:\\TestJob\\Evgenii.Ezhov.Altium\\100gb.txt -s 107374182400"
+        }
+    }
+}
